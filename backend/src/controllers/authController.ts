@@ -5,6 +5,7 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import {
   PasswordResetTable,
+  RoleTable,
   SessionTable,
   UserTable,
   VerificationTable,
@@ -25,23 +26,37 @@ import { calculateExpiry } from '../utils/helpers.js';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 
 export const signupUser = async (c: Context) => {
-  const body = await c.req.json<SignupFormValues>();
+  const { email, name, password } = await c.req.json<SignupFormValues>();
 
-  const [existingUser] = await db
-    .select()
-    .from(UserTable)
-    .where(eq(UserTable.email, body.email))
-    .limit(1);
+  const existingUser = await db.query.UserTable.findFirst({
+    where: eq(UserTable.email, email),
+    columns: { id: true },
+  });
 
   if (existingUser)
     return c.json({ success: false, message: 'Email already exist.' }, 400);
 
-  const hashedPassword = await hash(body.password);
+  const hashedPassword = await hash(password);
+
+  const defaultRole = await db.query.RoleTable.findFirst({
+    where: eq(RoleTable.name, 'user'),
+  });
+
+  if (!defaultRole)
+    return c.json(
+      { success: false, message: 'Default role does not exist. contact admin' },
+      500,
+    );
 
   const { newUser, token } = await db.transaction(async (tx) => {
     const [newUser] = await tx
       .insert(UserTable)
-      .values({ name: body.name, email: body.email, password: hashedPassword })
+      .values({
+        name: name,
+        email: email,
+        password: hashedPassword,
+        roleId: defaultRole?.id,
+      })
       .returning({ id: UserTable.id });
 
     const verificationCode = randomInt(100_000, 1_000_000).toString();
@@ -65,13 +80,11 @@ export const signupUser = async (c: Context) => {
 };
 
 export const loginUser = async (c: Context) => {
-  const body = await c.req.json<LoginFormValues>();
+  const { email, password, rememberMe } = await c.req.json<LoginFormValues>();
 
-  const [existingUser] = await db
-    .select()
-    .from(UserTable)
-    .where(eq(UserTable.email, body.email))
-    .limit(1);
+  const existingUser = await db.query.UserTable.findFirst({
+    where: eq(UserTable.email, email),
+  });
 
   if (!existingUser)
     return c.json(
@@ -79,7 +92,7 @@ export const loginUser = async (c: Context) => {
       401,
     );
 
-  const passwordMatch = await verify(existingUser.password, body.password);
+  const passwordMatch = await verify(existingUser.password, password);
 
   if (!passwordMatch)
     return c.json(
@@ -98,7 +111,7 @@ export const loginUser = async (c: Context) => {
     );
 
   const sessionId = randomBytes(32).toString('base64url');
-  const expiresAt = calculateExpiry(body.rememberMe);
+  const expiresAt = calculateExpiry(rememberMe);
   const userAgent = c.req.header('User-Agent') || 'unknown';
 
   const info = getConnInfo(c);
@@ -122,7 +135,7 @@ export const loginUser = async (c: Context) => {
     expires: expiresAt,
   });
 
-  const { password, ...userData } = existingUser;
+  const { password: _, ...userData } = existingUser;
 
   return c.json({
     success: true,
@@ -155,15 +168,12 @@ export const logoutUser = async (c: Context) => {
 export const verifyEMail = async (c: Context) => {
   const { token, userId } = await c.req.json<AuthCodeFormValues>();
 
-  const [verificationData] = await db
-    .select()
-    .from(VerificationTable)
-    .where(
-      and(
-        eq(VerificationTable.userId, userId),
-        eq(VerificationTable.token, token),
-      ),
-    );
+  const verificationData = await db.query.VerificationTable.findFirst({
+    where: and(
+      eq(VerificationTable.userId, userId),
+      eq(VerificationTable.token, token),
+    ),
+  });
 
   if (!verificationData)
     return c.json(

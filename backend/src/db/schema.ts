@@ -3,17 +3,45 @@ import {
   char,
   index,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
 
-export const UserTable = pgTable('userTable', {
+export const RoleTable = pgTable('role', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 50 }).unique().notNull(),
+});
+
+export const PermissionTable = pgTable('permission', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  action: varchar('action', { length: 100 }).unique().notNull(),
+  description: text('description'),
+});
+
+export const RolePermissionTable = pgTable(
+  'role_permission',
+  {
+    roleId: uuid('role_id').references(() => RoleTable.id, {
+      onDelete: 'cascade',
+    }),
+    permissionId: uuid('permission_id').references(() => PermissionTable.id, {
+      onDelete: 'cascade',
+    }),
+  },
+  (table) => [primaryKey({ columns: [table.roleId, table.permissionId] })],
+);
+
+export const UserTable = pgTable('user', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 225 }).notNull(),
   email: varchar('email', { length: 225 }).notNull().unique(),
   password: varchar('password', { length: 225 }).notNull(),
+  roleId: uuid('role_id')
+    .notNull()
+    .references(() => RoleTable.id),
   verifiedAt: timestamp('verified_at', { withTimezone: true, mode: 'date' }),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
     .defaultNow()
@@ -25,7 +53,7 @@ export const UserTable = pgTable('userTable', {
 });
 
 export const SessionTable = pgTable(
-  'sessionTable',
+  'session',
   {
     id: text('id').primaryKey(),
     userId: uuid('user_id')
@@ -42,11 +70,11 @@ export const SessionTable = pgTable(
 );
 
 export const VerificationTable = pgTable(
-  'verificationTable',
+  'verification',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     token: char('token', { length: 6 }).notNull(),
-    userId: uuid('userId')
+    userId: uuid('user_Id')
       .notNull()
       .references(() => UserTable.id, { onDelete: 'cascade' }),
     expiresAt: timestamp('expires_at', {
@@ -58,7 +86,7 @@ export const VerificationTable = pgTable(
 );
 
 export const PasswordResetTable = pgTable(
-  'PasswordResetTable',
+  'PasswordReset',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     token: char('token', { length: 6 }).notNull(),
