@@ -29,7 +29,7 @@ export const signupUser = async (c: Context) => {
   const { email, name, password } = await c.req.json<SignupFormValues>();
 
   const existingUser = await db.query.UserTable.findFirst({
-    where: eq(UserTable.email, email),
+    where: (user, { eq }) => eq(user.name, name),
     columns: { id: true },
   });
 
@@ -39,7 +39,7 @@ export const signupUser = async (c: Context) => {
   const hashedPassword = await hash(password);
 
   const defaultRole = await db.query.RoleTable.findFirst({
-    where: eq(RoleTable.name, 'user'),
+    where: (role, { eq }) => eq(role.name, 'user'),
   });
 
   if (!defaultRole)
@@ -84,6 +84,7 @@ export const loginUser = async (c: Context) => {
 
   const existingUser = await db.query.UserTable.findFirst({
     where: eq(UserTable.email, email),
+    extras: {},
   });
 
   if (!existingUser)
