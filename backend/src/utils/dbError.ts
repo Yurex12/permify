@@ -7,21 +7,9 @@ export const DB_ERRORS = {
 
 type DbErrorCode = (typeof DB_ERRORS)[keyof typeof DB_ERRORS];
 
-// export const isDbError = (
-//   error: unknown,
-//   code: DbErrorCode,
-// ): error is DatabaseError => {
-//   return error instanceof DatabaseError && error.code === code;
-// };
-
 export const isDbError = (error: unknown, code: DbErrorCode): boolean => {
-  // 1. Check if it's an object
-  if (typeof error === 'object' && error !== null) {
-    // 2. Cast to record to access 'code' without TS complaining
-    const err = error as Record<string, unknown>;
+  if (typeof error !== 'object' || error === null) return false;
 
-    // 3. Match the code
-    return err.code === code;
-  }
-  return false;
+  const cause = (error as any).cause;
+  return cause?.name === 'PostgresError' && cause?.code === code;
 };

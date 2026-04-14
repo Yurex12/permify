@@ -23,17 +23,10 @@ export const createPermission = async (c: Context) => {
       { success: true, message: 'Action created successfully', newPermission },
       201,
     );
-  } catch (error) {
-    console.log('Error', error);
-    if (isDbError(error, DB_ERRORS.UNIQUE_VIOLATION))
-      return c.json(
-        {
-          success: false,
-          message: 'Action already exists',
-          //   error: process.env.NODE_ENV === 'development' ? error : null,
-        },
-        409,
-      );
+  } catch (error: unknown) {
+    if (isDbError(error, DB_ERRORS.UNIQUE_VIOLATION)) {
+      return c.json({ success: false, message: 'Action already exists' }, 409);
+    }
 
     throw error;
   }

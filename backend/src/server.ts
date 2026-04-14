@@ -34,6 +34,7 @@ app.onError((error, c) => {
       success: false,
       message: isDev ? error.message : 'Internal Server Error',
       stack: isDev ? error.stack : null,
+      error: isDev ? error : null,
     },
     500,
   );
