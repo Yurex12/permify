@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import {
   boolean,
   char,
@@ -99,4 +100,66 @@ export const PasswordResetTable = pgTable(
     }).notNull(),
   },
   (table) => [index('password_reset_user_id_idx').on(table.userId)],
+);
+
+// RELATIONS
+
+export const RoleRelations = relations(RoleTable, ({ many }) => ({
+  users: many(UserTable),
+  rolePermissions: many(RolePermissionTable),
+}));
+
+export const PermissionRelations = relations(PermissionTable, ({ many }) => ({
+  rolePermissions: many(RolePermissionTable),
+}));
+
+export const RolePermissionRelations = relations(
+  RolePermissionTable,
+  ({ one }) => ({
+    role: one(RoleTable, {
+      fields: [RolePermissionTable.roleId],
+      references: [RoleTable.id],
+    }),
+    permission: one(PermissionTable, {
+      fields: [RolePermissionTable.permissionId],
+      references: [PermissionTable.id],
+    }),
+  }),
+);
+
+export const UserRelations = relations(UserTable, ({ one, many }) => ({
+  role: one(RoleTable, {
+    fields: [UserTable.roleId],
+    references: [RoleTable.id],
+  }),
+  sessions: many(SessionTable),
+  verifications: many(VerificationTable),
+  PasswordResets: many(PasswordResetTable),
+}));
+
+export const SessionRelations = relations(SessionTable, ({ one, many }) => ({
+  user: one(UserTable, {
+    fields: [SessionTable.userId],
+    references: [UserTable.id],
+  }),
+}));
+
+export const VerificationRelations = relations(
+  VerificationTable,
+  ({ one }) => ({
+    user: one(UserTable, {
+      fields: [VerificationTable.userId],
+      references: [UserTable.id],
+    }),
+  }),
+);
+
+export const PasswordResetRelations = relations(
+  PasswordResetTable,
+  ({ one }) => ({
+    user: one(UserTable, {
+      fields: [PasswordResetTable.userId],
+      references: [UserTable.id],
+    }),
+  }),
 );

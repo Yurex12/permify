@@ -2,7 +2,13 @@ import { and, eq, gt } from 'drizzle-orm';
 import type { Context, Next } from 'hono';
 import { deleteCookie, getCookie } from 'hono/cookie';
 import { db } from '../db/index.js';
-import { RoleTable, SessionTable, UserTable } from '../db/schema.js';
+import {
+  PermissionTable,
+  RolePermissionTable,
+  RoleTable,
+  SessionTable,
+  UserTable,
+} from '../db/schema.js';
 
 export const authMiddleware = async (c: Context, next: Next) => {
   const sessionId = getCookie(c, 'session');
@@ -14,32 +20,25 @@ export const authMiddleware = async (c: Context, next: Next) => {
     );
   }
 
-  const [result] = await db
-    .select({ user: UserTable, session: SessionTable, role: RoleTable.name })
-    .from(SessionTable)
-    .innerJoin(UserTable, eq(SessionTable.userId, UserTable.id))
-    .innerJoin(RoleTable, eq(UserTable.roleId, RoleTable.id))
-    .where(
-      and(
-        eq(SessionTable.id, sessionId),
-        gt(SessionTable.expiresAt, new Date()),
-      ),
-    )
-    .limit(1);
+  const result = await db.query.SessionTable.findFirst({
+    where: (session, { eq }) => eq(session.id, sessionId),
+    with: {
+      user: {
+        with: {
+          role: {
+            columns: { name: true },
+            with: {
+              rolePermissions: {
+                with: { permission: { columns: { action: true } } },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
 
   console.log(result);
-
-  // db.query.SessionTable.findFirst({
-  //   where: (session, { eq, and, gt }) =>
-  //     and(eq(session.id, sessionId), gt(session.expiresAt, new Date())),
-  //   with: {
-  //     UserTable: {
-  //       with: {
-  //         RoleTable: { columns: { role: true } },
-  //       },
-  //     },
-  //   },
-  // });
 
   if (!result) {
     deleteCookie(c, 'session');
@@ -49,8 +48,16 @@ export const authMiddleware = async (c: Context, next: Next) => {
     );
   }
 
-  c.set('user', { ...result.user, role: result.role });
-  c.set('session', result.session);
+  const { user, ...session } = result;
+  const { role, ...userData } = user;
+  const permissions = role.rolePermissions.map((rp) => rp.permission?.action);
+
+  c.set('session', session);
+  c.set('user', {
+    ...userData,
+    role: role.name,
+    permissions,
+  });
 
   await next();
 };
