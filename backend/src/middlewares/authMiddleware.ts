@@ -1,14 +1,7 @@
-import { and, eq, gt } from 'drizzle-orm';
+import { gt } from 'drizzle-orm';
 import type { Context, Next } from 'hono';
 import { deleteCookie, getCookie } from 'hono/cookie';
 import { db } from '../db/index.js';
-import {
-  PermissionTable,
-  RolePermissionTable,
-  RoleTable,
-  SessionTable,
-  UserTable,
-} from '../db/schema.js';
 
 export const authMiddleware = async (c: Context, next: Next) => {
   const sessionId = getCookie(c, 'session');
@@ -21,7 +14,8 @@ export const authMiddleware = async (c: Context, next: Next) => {
   }
 
   const result = await db.query.SessionTable.findFirst({
-    where: (session, { eq }) => eq(session.id, sessionId),
+    where: (session, { eq, and }) =>
+      and(eq(session.id, sessionId), gt(session.expiresAt, new Date())),
     with: {
       user: {
         with: {
@@ -50,7 +44,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
 
   const { user, ...session } = result;
   const { role, ...userData } = user;
-  const permissions = role.rolePermissions.map((rp) => rp.permission?.action);
+  const permissions = role.rolePermissions.map((rp) => rp.permission.action);
 
   c.set('session', session);
   c.set('user', {

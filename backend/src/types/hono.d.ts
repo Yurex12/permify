@@ -3,14 +3,14 @@ import { UserTable, SessionTable } from '../db/schema.ts';
 type User = typeof UserTable.$inferSelect;
 type Session = typeof SessionTable.$inferSelect;
 
-export type UserWithRole = User & {
+export type UserWithRelations = User & {
   role: string;
-  permissions: string[] | undefined;
+  permissions: string[];
 };
 
 declare module 'hono' {
   interface ContextVariableMap {
-    user: UserWithRole;
+    user: UserWithRelations;
     session: Session;
   }
 }

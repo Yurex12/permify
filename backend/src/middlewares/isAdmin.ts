@@ -3,7 +3,7 @@ import type { Context, Next } from 'hono';
 export const isAdmin = async (c: Context, next: Next) => {
   const user = c.get('user');
 
-  if (user.role !== 'admin') {
+  if (user?.role !== 'admin') {
     return c.json(
       {
         success: false,

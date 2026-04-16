@@ -25,12 +25,16 @@ export const PermissionTable = pgTable('permission', {
 export const RolePermissionTable = pgTable(
   'role_permission',
   {
-    roleId: uuid('role_id').references(() => RoleTable.id, {
-      onDelete: 'cascade',
-    }),
-    permissionId: uuid('permission_id').references(() => PermissionTable.id, {
-      onDelete: 'cascade',
-    }),
+    roleId: uuid('role_id')
+      .notNull()
+      .references(() => RoleTable.id, {
+        onDelete: 'cascade',
+      }),
+    permissionId: uuid('permission_id')
+      .notNull()
+      .references(() => PermissionTable.id, {
+        onDelete: 'cascade',
+      }),
   },
   (table) => [primaryKey({ columns: [table.roleId, table.permissionId] })],
 );

@@ -4,7 +4,8 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 
 import authRoutes from './routes/authRoutes.js';
-import adminRoutes from './routes/adminRoutes.js';
+import permissionRoutes from './routes/permissionRoutes.js';
+import roleRoutes from './routes/roleRoutes.js';
 
 const PORT = (process.env.PORT as number | undefined) || 8080;
 
@@ -15,8 +16,8 @@ app.get('/', async (c) => {
 });
 
 app.route('api/auth', authRoutes);
-app.route('api/admin', adminRoutes);
-
+app.route('api/permissions', permissionRoutes);
+app.route('api/roles', roleRoutes);
 app.notFound((c) => {
   return c.json(
     {
