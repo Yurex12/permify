@@ -46,7 +46,7 @@ export const UserTable = pgTable('user', {
   password: varchar('password', { length: 225 }).notNull(),
   roleId: uuid('role_id')
     .notNull()
-    .references(() => RoleTable.id),
+    .references(() => RoleTable.id, { onDelete: 'cascade' }),
   verifiedAt: timestamp('verified_at', { withTimezone: true, mode: 'date' }),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
     .defaultNow()

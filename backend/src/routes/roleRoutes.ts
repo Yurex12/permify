@@ -7,10 +7,11 @@ import { authMiddleware } from '../middlewares/authMiddleware.js';
 import { validateInput } from '../middlewares/validateInput.js';
 import { paramSchema } from '../schemas/paramSchema.js';
 import { roleSchema } from '../schemas/roleSchema.js';
+import { hasPermission } from '../middlewares/hasPermission.js';
 
 const role = new Hono()
   .use('*', authMiddleware)
-  .get('/', getRoles)
+  .get('/', hasPermission('role:read'), getRoles)
   .put(
     '/:id/permissions',
     validateInput('param', paramSchema),
