@@ -43,7 +43,7 @@ const role = new Hono()
   )
   .put(
     '/:id/permissions',
-    hasPermission(''),
+    hasPermission('role:updatePermissions'),
     validateInput('param', paramSchema),
     validateInput('json', rolePermissionSchema),
     updateRolePermission,

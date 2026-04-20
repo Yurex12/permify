@@ -42,14 +42,23 @@ export const updateRole = async (c: Context) => {
   const id = c.req.param('id');
   const { name } = await c.req.json<RoleFormValues>();
 
+  const role = await db.query.RoleTable.findFirst({
+    where: eq(RoleTable.id, id),
+  });
+
+  if (!role) return c.json({ success: false, message: 'Role not found' }, 404);
+
+  if (role.name === 'admin')
+    return c.json(
+      { success: false, message: 'Admin role cannot be modified' },
+      403,
+    );
+
   try {
-    const result = await db
+    await db
       .update(RoleTable)
       .set({ name: name.toLowerCase() })
       .where(eq(RoleTable.id, id));
-
-    if (result.count === 0)
-      return c.json({ success: false, message: 'Role not found' }, 404);
 
     return c.json({ success: true, message: 'Role updated successfully' });
   } catch (error) {
@@ -71,10 +80,19 @@ export const updateRole = async (c: Context) => {
 export const deleteRole = async (c: Context) => {
   const id = c.req.param('id');
 
-  const result = await db.delete(RoleTable).where(eq(RoleTable.id, id));
+  const role = await db.query.RoleTable.findFirst({
+    where: eq(RoleTable.id, id),
+  });
 
-  if (result.count === 0)
-    return c.json({ success: false, message: 'Role not found' }, 404);
+  if (!role) return c.json({ success: false, message: 'Role not found' }, 404);
+
+  if (role.name === 'admin')
+    return c.json(
+      { success: false, message: 'Admin role cannot be deleted' },
+      403,
+    );
+
+  await db.delete(RoleTable).where(eq(RoleTable.id, id));
 
   return c.json({ success: true, message: 'Role deleted successfully' });
 };
