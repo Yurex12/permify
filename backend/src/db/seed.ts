@@ -45,7 +45,6 @@ const permissions = [
 
   // permission management
   { action: 'permission:read', description: 'View permissions' },
-  { action: 'permission:assign', description: 'Assign a permission to a role' },
 ];
 
 // ============ ROLE → PERMISSIONS MAP ============
