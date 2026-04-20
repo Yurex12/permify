@@ -38,7 +38,10 @@ const permissions = [
   { action: 'role:create', description: 'Create a role' },
   { action: 'role:update', description: 'Update a role' },
   { action: 'role:delete', description: 'Delete a role' },
-  { action: 'role:assign', description: 'Assign a role to a user' },
+  {
+    action: 'role:updatePermissions',
+    description: 'Assign permissions to a role',
+  },
 
   // permission management
   { action: 'permission:read', description: 'View permissions' },
