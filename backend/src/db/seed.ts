@@ -15,10 +15,7 @@ const roles = [
 const permissions = [
   // user management
   { action: 'user:read', description: 'View users' },
-  { action: 'user:ban', description: 'Ban a user' },
-  { action: 'user:restrict', description: 'Restrict a user' },
-  { action: 'user:delete', description: 'Delete a user' },
-  { action: 'user:promote', description: 'Assign a role to a user' },
+  { action: 'user:updateRole', description: 'Assign or update a role for a user' },
 
   // post management
   { action: 'post:read', description: 'View posts' },
@@ -52,13 +49,15 @@ const permissions = [
 const rolePermissionsMap: Record<string, string[]> = {
   moderator: [
     'user:read',
-    'user:ban',
-    'user:restrict',
+    'user:updateRole',
     'post:read',
     'comment:read',
     'comment:delete',
     'comment:moderate',
     'role:read',
+    'role:create',
+    'role:update',
+    'role:updatePermissions',
     'permission:read',
   ],
   editor: [
