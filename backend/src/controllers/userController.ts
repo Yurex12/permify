@@ -5,6 +5,7 @@ import { RoleTable, UserRestrictionTable, UserTable } from '../db/schema.js';
 import { DB_ERRORS, isDbError } from '../utils/dbError.js';
 import type {
   BanUserFormValues,
+  RestrictUserFormValues,
   UpdateUserRoleFormValues,
 } from '../schemas/userSchema.js';
 
@@ -104,30 +105,49 @@ export const banUser = async (c: Context) => {
   if (userId === currentUserId)
     return c.json({ success: false, message: `You can't ban yourself` }, 400);
 
-  const user = await db.query.UserTable.findFirst({
-    where: eq(UserTable.id, userId),
-  });
+  try {
+    await db.insert(UserRestrictionTable).values({
+      reason,
+      status: 'BANNED',
+      restrictedById: currentUserId,
+      userId,
+    });
 
-  if (!user) return c.json({ success: false, message: 'User not found' }, 404);
-
-  await db.insert(UserRestrictionTable).values({
-    reason,
-    status: 'BANNED',
-    restrictedById: currentUserId,
-    userId,
-  });
-
-  return c.json({ success: true, message: 'User banned successfully' });
+    return c.json({ success: true, message: 'User banned successfully' });
+  } catch (error) {
+    if (isDbError(error, DB_ERRORS.FOREIGN_KEY_VIOLATION)) {
+      return c.json({ success: false, message: 'User not found' }, 404);
+    }
+    throw error;
+  }
 };
 
 // user:restrict
 export const restrictUser = async (c: Context) => {
   const userId = c.req.param('id');
-  const { roleId } = await c.req.json<UpdateUserRoleFormValues>();
+  const currentUserId = c.get('user').id;
+  const { reason, expiresAt } = await c.req.json<RestrictUserFormValues>();
 
-  const user = await db.query.UserTable.findFirst({
-    where: eq(UserTable.id, userId),
-  });
+  if (userId === currentUserId)
+    return c.json(
+      { success: false, message: `You can't restrict yourself` },
+      400,
+    );
 
-  if (!user) return c.json({ success: false, message: 'User not found' }, 404);
+  try {
+    await db.insert(UserRestrictionTable).values({
+      reason,
+      status: 'RESTRICTED',
+      restrictedById: currentUserId,
+      userId,
+      expiresAt,
+    });
+
+    return c.json({ success: true, message: 'User restricted successfully' });
+  } catch (error) {
+    if (isDbError(error, DB_ERRORS.FOREIGN_KEY_VIOLATION)) {
+      return c.json({ success: false, message: 'User not found' }, 404);
+    }
+    throw error;
+  }
 };

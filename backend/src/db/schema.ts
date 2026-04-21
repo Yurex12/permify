@@ -162,7 +162,12 @@ export const UserRelations = relations(UserTable, ({ one, many }) => ({
   sessions: many(SessionTable),
   verifications: many(VerificationTable),
   PasswordResets: many(PasswordResetTable),
-  userRestriction: many(UserRestrictionTable),
+  userRestriction: many(UserRestrictionTable, {
+    relationName: 'userRestrictions',
+  }),
+  restrictionsIssued: many(UserRestrictionTable, {
+    relationName: 'restrictionsIssued',
+  }),
 }));
 
 export const userRestrictionRelations = relations(
@@ -171,10 +176,12 @@ export const userRestrictionRelations = relations(
     user: one(UserTable, {
       fields: [UserRestrictionTable.userId],
       references: [UserTable.id],
+      relationName: 'userRestrictions',
     }),
-    restrictedByUser: one(UserTable, {
+    restrictedBy: one(UserTable, {
       fields: [UserRestrictionTable.restrictedById],
       references: [UserTable.id],
+      relationName: 'restrictionsIssued',
     }),
   }),
 );

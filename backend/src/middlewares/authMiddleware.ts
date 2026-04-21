@@ -1,7 +1,8 @@
-import { gt } from 'drizzle-orm';
+import { desc, gt } from 'drizzle-orm';
 import type { Context, Next } from 'hono';
 import { deleteCookie, getCookie } from 'hono/cookie';
 import { db } from '../db/index.js';
+import { UserRestrictionTable } from '../db/schema.js';
 
 export const authMiddleware = async (c: Context, next: Next) => {
   const sessionId = getCookie(c, 'session');
@@ -27,6 +28,11 @@ export const authMiddleware = async (c: Context, next: Next) => {
               },
             },
           },
+          userRestriction: {
+            columns: { status: true, reason: true, expiresAt: true },
+            orderBy: desc(UserRestrictionTable.restrictedAt),
+            limit: 1,
+          },
         },
       },
     },
@@ -40,6 +46,24 @@ export const authMiddleware = async (c: Context, next: Next) => {
       { success: false, message: 'Unauthorized: Session invalid or expired' },
       401,
     );
+  }
+
+  if (result.user.userRestriction.length) {
+    const { reason, status, expiresAt } = result.user.userRestriction[0];
+
+    const isRestricted =
+      status === 'RESTRICTED' && expiresAt && new Date() < expiresAt;
+    const isBanned = status === 'BANNED';
+
+    if (isRestricted || isBanned) {
+      return c.json(
+        {
+          success: false,
+          message: `You are ${status} - ${reason}`,
+        },
+        403,
+      );
+    }
   }
 
   const { user, ...session } = result;
