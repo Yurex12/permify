@@ -3,6 +3,8 @@ import {
   boolean,
   char,
   index,
+  pgEnum,
+  PgEnumColumn,
   pgTable,
   primaryKey,
   text,
@@ -10,6 +12,11 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+
+export const UserRestrictionEnum = pgEnum('user_restriction_enum', [
+  'RESTRICTED',
+  'BANNED',
+]);
 
 export const RoleTable = pgTable('role', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -57,6 +64,22 @@ export const UserTable = pgTable('user', {
     .notNull(),
 });
 
+export const UserRestrictionTable = pgTable('userRestriction', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => UserTable.id),
+  restrictedById: uuid('restricted_by_id')
+    .notNull()
+    .references(() => UserTable.id),
+  status: UserRestrictionEnum().notNull(),
+  reason: text('reason').notNull(),
+  restrictedAt: timestamp('restricted_at', {
+    withTimezone: true,
+    mode: 'date',
+  }).defaultNow(),
+  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }),
+});
 export const SessionTable = pgTable(
   'session',
   {
@@ -139,7 +162,22 @@ export const UserRelations = relations(UserTable, ({ one, many }) => ({
   sessions: many(SessionTable),
   verifications: many(VerificationTable),
   PasswordResets: many(PasswordResetTable),
+  userRestriction: many(UserRestrictionTable),
 }));
+
+export const userRestrictionRelations = relations(
+  UserRestrictionTable,
+  ({ one }) => ({
+    user: one(UserTable, {
+      fields: [UserRestrictionTable.userId],
+      references: [UserTable.id],
+    }),
+    restrictedByUser: one(UserTable, {
+      fields: [UserRestrictionTable.restrictedById],
+      references: [UserTable.id],
+    }),
+  }),
+);
 
 export const SessionRelations = relations(SessionTable, ({ one, many }) => ({
   user: one(UserTable, {

@@ -15,7 +15,12 @@ const roles = [
 const permissions = [
   // user management
   { action: 'user:read', description: 'View users' },
-  { action: 'user:updateRole', description: 'Assign or update a role for a user' },
+  {
+    action: 'user:updateRole',
+    description: 'Update a user role',
+  },
+  { action: 'user:restrict', description: 'Restrict user access temporarily' },
+  { action: 'user:ban', description: 'Ban user permanently' },
 
   // post management
   { action: 'post:read', description: 'View posts' },

@@ -1,19 +1,17 @@
 import { Hono } from 'hono';
 import {
+  assignRoleToUser,
+  banUser,
   getMe,
   getUserById,
   getUsers,
-  assignRoleToUser,
+  restrictUser,
 } from '../controllers/userController.js';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
+import { hasPermission } from '../middlewares/hasPermission.js';
 import { validateInput } from '../middlewares/validateInput.js';
 import { paramSchema } from '../schemas/paramSchema.js';
-import { hasPermission } from '../middlewares/hasPermission.js';
-import * as z from 'zod';
-
-const assignRoleSchema = z.object({
-  roleId: z.uuid('Invalid Role ID format'),
-});
+import { updateUserRoleSchema } from '../schemas/userSchema.js';
 
 const user = new Hono()
   .use('*', authMiddleware)
@@ -24,8 +22,22 @@ const user = new Hono()
     '/:id/role',
     hasPermission('user:updateRole'),
     validateInput('param', paramSchema),
-    validateInput('json', assignRoleSchema),
+    validateInput('json', updateUserRoleSchema),
     assignRoleToUser,
+  )
+  .post(
+    '/:id/restrict',
+    hasPermission('user:restrict'),
+    validateInput('param', paramSchema),
+    validateInput('json', updateUserRoleSchema),
+    restrictUser,
+  )
+  .post(
+    '/:id/ban',
+    hasPermission('user:ban'),
+    validateInput('param', paramSchema),
+    validateInput('json', updateUserRoleSchema),
+    banUser,
   );
 
 export default user;
