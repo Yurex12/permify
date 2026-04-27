@@ -5,6 +5,7 @@ import { serve } from '@hono/node-server';
 
 import authRoutes from './routes/authRoutes.js';
 import permissionRoutes from './routes/permissionRoutes.js';
+import postRoutes from './routes/postRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 
@@ -18,6 +19,7 @@ app.get('/', async (c) => {
 
 app.route('api/auth', authRoutes);
 app.route('api/permissions', permissionRoutes);
+app.route('api/posts', postRoutes);
 app.route('api/roles', roleRoutes);
 app.route('api/users', userRoutes);
 app.notFound((c) => {

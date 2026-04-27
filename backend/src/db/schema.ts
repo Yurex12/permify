@@ -129,6 +129,19 @@ export const PasswordResetTable = pgTable(
   (table) => [index('password_reset_user_id_idx').on(table.userId)],
 );
 
+export const PostTable = pgTable('post', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  content: text('content').notNull(),
+  userId: uuid('user_id').references(() => UserTable.id),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
 // RELATIONS
 
 export const RoleRelations = relations(RoleTable, ({ many }) => ({
@@ -168,6 +181,7 @@ export const UserRelations = relations(UserTable, ({ one, many }) => ({
   restrictionsIssued: many(UserRestrictionTable, {
     relationName: 'restrictionsIssued',
   }),
+  posts: many(PostTable),
 }));
 
 export const userRestrictionRelations = relations(
@@ -212,3 +226,10 @@ export const PasswordResetRelations = relations(
     }),
   }),
 );
+
+export const PostRelations = relations(PostTable, ({ one }) => ({
+  user: one(UserTable, {
+    fields: [PostTable.userId],
+    references: [UserTable.id],
+  }),
+}));

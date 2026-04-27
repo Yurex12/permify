@@ -29,12 +29,6 @@ const permissions = [
   { action: 'post:delete', description: 'Delete a post' },
   { action: 'post:publish', description: 'Publish a post' },
 
-  // comment management
-  { action: 'comment:read', description: 'View comments' },
-  { action: 'comment:create', description: 'Create a comment' },
-  { action: 'comment:delete', description: 'Delete a comment' },
-  { action: 'comment:moderate', description: 'Flag or hide a comment' },
-
   // role management
   { action: 'role:read', description: 'View roles' },
   { action: 'role:create', description: 'Create a role' },
@@ -56,9 +50,7 @@ const rolePermissionsMap: Record<string, string[]> = {
     'user:read',
     'user:updateRole',
     'post:read',
-    'comment:read',
-    'comment:delete',
-    'comment:moderate',
+    'post:delete',
     'role:read',
     'role:create',
     'role:update',
@@ -70,18 +62,11 @@ const rolePermissionsMap: Record<string, string[]> = {
     'post:create',
     'post:update',
     'post:publish',
-    'comment:read',
     'role:read',
     'permission:read',
   ],
-  author: [
-    'post:read',
-    'post:create',
-    'post:update',
-    'comment:read',
-    'comment:create',
-  ],
-  user: ['post:read', 'comment:read'],
+  author: ['post:read', 'post:create', 'post:update'],
+  user: ['post:read'],
 };
 
 async function main() {
